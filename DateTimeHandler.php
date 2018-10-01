@@ -3,7 +3,9 @@
 namespace inquid\date_time;
 
 use DateTime;
+use DateTimeZone;
 use Yii;
+
 
 /**
  * Created by PhpStorm.
@@ -17,12 +19,14 @@ class DateTimeHandler
     private $current_month;
     private $current_week;
     private $current_day;
+
     public function __construct()
     {
         $this->current_month = self::getDateTime('m');
         $this->current_week = self::getDateTime('w');
         $this->current_day = self::getDateTime('d');
     }
+
     /**
      * @param string en-US
      */
@@ -30,6 +34,7 @@ class DateTimeHandler
     {
         Yii::$app->formatter->locale = $zone;
     }
+
     /**
      * @return \DateTime
      */
@@ -37,6 +42,7 @@ class DateTimeHandler
     {
         return new \DateTime('now', new \DateTimeZone(DateTimeHandler::ZONE));
     }
+
     /**
      * @param $timeStamp
      * @return string
@@ -46,6 +52,7 @@ class DateTimeHandler
     {
         return Yii::$app->formatter->asTime($timeStamp);
     }
+
     /**
      * @param string $format
      * @return string
@@ -55,6 +62,7 @@ class DateTimeHandler
     {
         return Yii::$app->formatter->asDate('now', $format);
     }
+
     /**
      * Return PHP's default Time Zone
      */
@@ -63,6 +71,7 @@ class DateTimeHandler
         $timezone = date_default_timezone_get();
         echo $timezone . " ";
     }
+
     /**
      * @param $zone
      * America/Los_Angeles
@@ -71,6 +80,7 @@ class DateTimeHandler
     {
         date_default_timezone_set($zone);
     }
+
     /**
      * @param null $format
      * @return string
@@ -82,6 +92,29 @@ class DateTimeHandler
             return self::currentDate()->format('Y-m-d H:i:s');
         return self::currentDate()->format($format);
     }
+
+    /**
+     * @param null $format
+     * @return string
+     */
+    public static function getDateTimeMinusDays($date, $minus)
+    {
+        self::setDefaultTimeZone(DateTimeHandler::ZONE);
+        return date('Y-m-d', strtotime("-{$minus} day", strtotime($date)));
+    }
+
+    /**
+     * @param null $format
+     * @return string
+     */
+    public static function getDateTimePlusDays($format = null, $plus)
+    {
+        self::setDefaultTimeZone(DateTimeHandler::ZONE);
+        if ($format == null)
+            return date('Y-m-d H:i:s', strtotime("+$plus days"));
+        return date($format, strtotime("+$plus days"));
+    }
+
     /**
      * Return current date +1 day to avoid "ship date has passed
      * @return false|string
@@ -90,6 +123,7 @@ class DateTimeHandler
     {
         return date(DATE_ISO8601, strtotime(Date(DATE_ISO8601) . "+1 days"));
     }
+
     /**
      * @param $date string
      * @return string
@@ -99,6 +133,7 @@ class DateTimeHandler
         $resultDate = new DateTime($date);
         return $resultDate->format("W");
     }
+
     /**
      * @param $year
      * @param $week
@@ -111,6 +146,7 @@ class DateTimeHandler
         $gendate->setISODate($year, $week, $dayNumber);
         return $gendate->format('Y-m-d');
     }
+
     /**
      * @param $date
      * @return false|string
@@ -121,6 +157,8 @@ class DateTimeHandler
             return self::formatDate($date, "d/m/Y");
         return '';
     }
+
+
     /**
      * @param $date
      * @param $format
@@ -130,6 +168,13 @@ class DateTimeHandler
     {
         return date($format, strtotime($date));
     }
+
+    public static function getDatePlusDays($date, $plus)
+    {
+        self::setDefaultTimeZone(self::ZONE);
+        return date('Y-m-d', strtotime("+{$plus} day", strtotime($date)));
+    }
+
     /**
      * @param null $month
      * @return array|bool
@@ -141,6 +186,7 @@ class DateTimeHandler
         }
         return $month > 0 && $month <= 12 ? [date("Y-$month-01"), date("Y-$month-" . date("t"))] : false;
     }
+
     /**
      * @param $from
      * @param $to
@@ -154,6 +200,7 @@ class DateTimeHandler
         $to = is_int($to) ? $to : strtotime($to);         // ..
         return ($date > $from) && ($date < $to); // extra parens for clarity
     }
+
     public function getWeekDays($week = null)
     {
         if (!isset($week)) {
@@ -162,177 +209,29 @@ class DateTimeHandler
         return $week > 0 && $week <= 52 ? [date('Y-m-d', strtotime('-' . $week . ' days')), date('Y-m-d', strtotime('+' . (6 - $week) . ' days'))] : false;
     }
 
+    public static function addDays($date, $days, $format = 'Y-m-d')
+    {
+        return date($format, strtotime($date . "+$days days"));
+    }
 
-     * @return int
-     */
-    public static function now()
+
+    public static function getTestDate()
     {
-        return time();
-    }
-    /**
-     * @return string
-     */
-    public static function currentTime()
-    {
-        $format = 'Y-m-d H:i:s';
-        return self::currentTimeWithFormat($format);
-    }
-    /**
-     * @return string
-     */
-    public static function currentDate()
-    {
-        $format = 'Y-m-d';
-        return self::currentTimeWithFormat($format);
-    }
-    /**
-     * @param $format
-     * @return string
-     */
-    public static function currentTimeWithFormat($format)
-    {
-        return self::timeWithFormat($format, self::now());
-    }
-    /**
-     * @param string $format
-     * @param string $time
-     * @return string
-     */
-    public static function timeWithFormat($format, $time)
-    {
-        $date = gmdate($format, $time);
-        if ($date === false) {
-            return "";
+        $date = new DateTime(date("Y-m-d"));
+        $date->modify('+16 day');
+        if (!self::isWeekend($date->format("Y-m-d")))
+            return $date->format("Y-m-d");
+        else {
+            $date->modify('+1 day');
+            if (self::isWeekend($date->format("Y-m-d")))
+                $date->modify('+1 day');
+            return $date->format("Y-m-d");
         }
-        return $date;
     }
-    /**
-     * @param $date_string
-     * @param $day
-     * @return string
-     */
-    public static function addDays($date_string, $day)
+
+    public static function isWeekend($date)
     {
-        $format = 'Y-m-d H:i:s';
-        return self::addDaysWithFormat($format, $date_string, $day);
-    }
-    /**
-     * @param string $format
-     * @param string $date_string
-     * @param int $day
-     * @return string
-     */
-    public static function addDaysWithFormat($format, $date_string, $day)
-    {
-        $seconds = (24 * 60 * 60) * $day;
-        return self::addSecondsWithFormat($format, $date_string, $seconds);
-    }
-    /**
-     * @param string $format
-     * @param string $date_string
-     * @param int $seconds
-     * @return string
-     */
-    public static function addSecondsWithFormat($format, $date_string, $seconds)
-    {
-        $unix_time = self::strToTimeUTC($date_string);
-        $unix_time += $seconds;
-        return self::timeWithFormat($format, $unix_time);
-    }
-    /**
-     * @param string $format
-     * @param float $seconds
-     * @return string
-     */
-    public static function afterSecondsFromNowWithFormat($format, $seconds)
-    {
-        return self::addSecondsWithFormat($format, self::currentTime(), $seconds);
-    }
-    /**
-     * @param string $date_string
-     * @return string
-     */
-    public static function getPreviousDay($date_string)
-    {
-        $format = 'Y-m-d H:i:s';
-        return self::getPreviousDayWithFormat($format, $date_string);
-    }
-    /**
-     * @param string $format
-     * @param string $date_string
-     * @return string
-     */
-    public static function getPreviousDayWithFormat($format, $date_string)
-    {
-        return self::addDaysWithFormat($format, $date_string, -1);
-    }
-    /**
-     * @param string $date_string
-     * @return string
-     */
-    public static function getNextDay($date_string)
-    {
-        $format = 'Y-m-d H:i:s';
-        return self::getNextDayWithFormat($format, $date_string);
-    }
-    /**
-     * @param string $format
-     * @param string $date_string
-     * @return string
-     */
-    public static function getNextDayWithFormat($format, $date_string)
-    {
-        return self::addDaysWithFormat($format, $date_string, 1);
-    }
-    /**
-     * @param string $date_string
-     * @return bool
-     */
-    public static function isLaterThanNow($date_string)
-    {
-        $now = self::currentTime();
-        return self::isLaterThan($date_string, $now);
-    }
-    /**
-     * @param string $first_date_string
-     * @param string $second_date_string
-     * @return bool
-     */
-    public static function isLaterThan($first_date_string, $second_date_string)
-    {
-        return $first_date_string > $second_date_string;
-    }
-    /**
-     * @param string $date_string
-     * @return int
-     */
-    public static function remainingTimeUntil($date_string)
-    {
-        return self::strToTimeUTC($date_string) - self::now();
-    }
-    /**
-     * @param string $date_string
-     * @return int
-     */
-    public static function elapsedTimeSince($date_string)
-    {
-        return self::now() - self::strToTimeUTC($date_string);
-    }
-    /**
-     * @param string $date_string
-     * @return false|int
-     */
-    public static function strToTimeUTC($date_string)
-    {
-        return strtotime($date_string . " UTC");
-    }
-    /**
-     * @param float $seconds
-     * @return string
-     */
-    public static function afterSecondsFromNow($seconds)
-    {
-        $format = 'Y-m-d H:i:s';
-        return self::afterSecondsFromNowWithFormat($format, $seconds);
+        $inputDate = DateTime::createFromFormat("Y-m-d", $date, new DateTimeZone("America/Chicago"));
+        return $inputDate->format('N') >= 6;
     }
 }
