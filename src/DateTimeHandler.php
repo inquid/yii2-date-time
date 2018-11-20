@@ -234,4 +234,13 @@ class DateTimeHandler
         $inputDate = DateTime::createFromFormat("Y-m-d", $date, new DateTimeZone("America/Chicago"));
         return $inputDate->format('N') >= 6;
     }
+    
+   /**
+     * @param $date
+     * @return bool
+     */
+    public static function isBeforeToday($date)
+    {
+        return self::getDateTime() > $date;
+    }
 }
