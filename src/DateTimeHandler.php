@@ -2,8 +2,8 @@
 
 namespace inquid\date_time;
 
+use Carbon\Carbon;
 use DateTime;
-use DateTimeZone;
 use Yii;
 
 
@@ -13,19 +13,12 @@ use Yii;
  * Date: 14/03/17
  * Time: 09:51 AM
  */
-class DateTimeHandler
+class DateTimeHandler extends Carbon
 {
     const ZONE = 'America/Monterrey';
     private $current_month;
     private $current_week;
     private $current_day;
-
-    public function __construct()
-    {
-        $this->current_month = self::getDateTime('m');
-        $this->current_week = self::getDateTime('w');
-        $this->current_day = self::getDateTime('d');
-    }
 
     /**
      * @param string en-US
@@ -40,7 +33,7 @@ class DateTimeHandler
      */
     public static function currentDate()
     {
-        return new \DateTime('now', new \DateTimeZone(DateTimeHandler::ZONE));
+        return Carbon::now(DateTimeHandler::ZONE);
     }
 
     /**
@@ -87,7 +80,7 @@ class DateTimeHandler
      */
     public static function getDateTime($format = null)
     {
-        self::setDefaultTimeZone(DateTimeHandler::ZONE);
+        $date = (new Carbon())->setDefaultTimeZone(DateTimeHandler::ZONE);
         if ($format == null)
             return self::currentDate()->format('Y-m-d H:i:s');
         return self::currentDate()->format($format);
@@ -209,33 +202,23 @@ class DateTimeHandler
         return $week > 0 && $week <= 52 ? [date('Y-m-d', strtotime('-' . $week . ' days')), date('Y-m-d', strtotime('+' . (6 - $week) . ' days'))] : false;
     }
 
-    public static function addDays($date, $days, $format = 'Y-m-d')
-    {
-        return date($format, strtotime($date . "+$days days"));
-    }
 
-
-    public static function getTestDate()
+    /**
+     * Get the date of a exam 15 days from now
+     * @return string
+     */
+    public function getTestDate()
     {
-        $date = new DateTime(date("Y-m-d"));
-        $date->modify('+16 day');
-        if (!self::isWeekend($date->format("Y-m-d")))
-            return $date->format("Y-m-d");
-        else {
-            $date->modify('+1 day');
-            if (self::isWeekend($date->format("Y-m-d")))
-                $date->modify('+1 day');
-            return $date->format("Y-m-d");
+        $date = $this->addDays(16);
+        if ($date->isSaturday()) {
+            return $date->addDays(2);
+        } elseif ($date->isSunday()) {
+            return $date->addDay();
         }
+        return $date;
     }
 
-    public static function isWeekend($date)
-    {
-        $inputDate = DateTime::createFromFormat("Y-m-d", $date, new DateTimeZone("America/Chicago"));
-        return $inputDate->format('N') >= 6;
-    }
-    
-   /**
+    /**
      * @param $date
      * @return bool
      */
