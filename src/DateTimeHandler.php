@@ -80,7 +80,7 @@ class DateTimeHandler extends Carbon
      */
     public static function getDateTime($format = null)
     {
-        $date = (new Carbon())->setDefaultTimeZone(DateTimeHandler::ZONE);
+        $date = self::setDefaultTimeZone(DateTimeHandler::ZONE);
         if ($format == null)
             return self::currentDate()->format('Y-m-d H:i:s');
         return self::currentDate()->format($format);
